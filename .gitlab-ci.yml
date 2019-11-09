@@ -1,0 +1,14 @@
+image: maven:3-jdk-8
+
+stages:
+  - build
+  - test
+
+build:
+  stage: Build
+  script: "mvn clean install -DskipTests"
+
+test:
+  stage: Test
+  script: "mvn test -B"
+
