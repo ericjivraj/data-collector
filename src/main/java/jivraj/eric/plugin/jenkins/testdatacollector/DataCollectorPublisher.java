@@ -3,6 +3,9 @@ package jivraj.eric.plugin.jenkins.testdatacollector;
 import hudson.Launcher;
 import hudson.Extension;
 import hudson.FilePath;
+import hudson.tasks.BuildStepMonitor;
+import hudson.tasks.Publisher;
+import hudson.tasks.Recorder;
 import hudson.util.FormValidation;
 import hudson.model.AbstractProject;
 import hudson.model.Run;
@@ -18,7 +21,7 @@ import jenkins.tasks.SimpleBuildStep;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundSetter;
 
-public class DataCollectorPublisher extends Builder implements SimpleBuildStep
+public class DataCollectorPublisher extends Recorder implements SimpleBuildStep
 {
 
     private final String databaseUrl;
@@ -71,9 +74,15 @@ public class DataCollectorPublisher extends Builder implements SimpleBuildStep
         }
     }
 
+    @Override
+    public BuildStepMonitor getRequiredMonitorService()
+    {
+        return BuildStepMonitor.NONE;
+    }
+
     @Symbol("greet")
     @Extension
-    public static final class DescriptorImpl extends BuildStepDescriptor<Builder>
+    public static final class DescriptorImpl extends BuildStepDescriptor<Publisher>
     {
 
         public FormValidation doCheckDatabaseUrl(@QueryParameter String databaseUrl) throws IOException, ServletException

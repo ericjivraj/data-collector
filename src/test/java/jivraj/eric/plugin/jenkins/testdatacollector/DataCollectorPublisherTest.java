@@ -24,17 +24,17 @@ public class DataCollectorPublisherTest
     public void testConfigRoundtrip() throws Exception
     {
         FreeStyleProject project = jenkins.createFreeStyleProject();
-        project.getBuildersList().add(new DataCollectorPublisher(databaseUrl, databaseName, testReportXMLPath));
+        project.getPublishersList().add(new DataCollectorPublisher(databaseUrl, databaseName, testReportXMLPath));
         project = jenkins.configRoundtrip(project);
-        jenkins.assertEqualDataBoundBeans(new DataCollectorPublisher(databaseUrl, databaseName, testReportXMLPath), project.getBuildersList().get(0));
+        jenkins.assertEqualDataBoundBeans(new DataCollectorPublisher(databaseUrl, databaseName, testReportXMLPath), project.getPublishersList().get(0));
     }
 
     @Test
     public void testBuild() throws Exception
     {
         FreeStyleProject project = jenkins.createFreeStyleProject();
-        DataCollectorPublisher builder = new DataCollectorPublisher(databaseUrl, databaseName, testReportXMLPath);
-        project.getBuildersList().add(builder);
+        DataCollectorPublisher publisher = new DataCollectorPublisher(databaseUrl, databaseName, testReportXMLPath);
+        project.getPublishersList().add(publisher);
 
         FreeStyleBuild build = jenkins.buildAndAssertSuccess(project);
         jenkins.assertLogContains("Hello, " + databaseUrl, build);
