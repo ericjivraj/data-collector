@@ -5,10 +5,10 @@ stages:
   - test
 
 build:
-  stage: Build
+  stage: build
   script: "mvn clean install -DskipTests"
 
 test:
-  stage: Test
+  stage: test
   script: "mvn test -B"
 
