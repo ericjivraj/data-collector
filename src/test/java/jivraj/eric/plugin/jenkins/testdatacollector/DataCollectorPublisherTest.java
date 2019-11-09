@@ -15,25 +15,27 @@ public class DataCollectorPublisherTest {
     @Rule
     public JenkinsRule jenkins = new JenkinsRule();
 
-    final String name = "Bobby";
+    final String databaseUrl = "Database URL";
+    final String databaseName = "Database Name";
+    final String testReportXMLPath = "XML Path";
 
     @Test
     public void testConfigRoundtrip() throws Exception {
         FreeStyleProject project = jenkins.createFreeStyleProject();
-        project.getBuildersList().add(new DataCollectorPublisher(name));
+        project.getBuildersList().add(new DataCollectorPublisher(databaseUrl, databaseName, testReportXMLPath));
         project = jenkins.configRoundtrip(project);
-        jenkins.assertEqualDataBoundBeans(new DataCollectorPublisher(name), project.getBuildersList().get(0));
+        jenkins.assertEqualDataBoundBeans(new DataCollectorPublisher(databaseUrl, databaseName, testReportXMLPath), project.getBuildersList().get(0));
     }
 
     @Test
     public void testConfigRoundtripFrench() throws Exception {
         FreeStyleProject project = jenkins.createFreeStyleProject();
-        DataCollectorPublisher builder = new DataCollectorPublisher(name);
+        DataCollectorPublisher builder = new DataCollectorPublisher(databaseUrl, databaseName, testReportXMLPath);
         builder.setUseFrench(true);
         project.getBuildersList().add(builder);
         project = jenkins.configRoundtrip(project);
 
-        DataCollectorPublisher lhs = new DataCollectorPublisher(name);
+        DataCollectorPublisher lhs = new DataCollectorPublisher(databaseUrl, databaseName, testReportXMLPath);
         lhs.setUseFrench(true);
         jenkins.assertEqualDataBoundBeans(lhs, project.getBuildersList().get(0));
     }
@@ -41,23 +43,23 @@ public class DataCollectorPublisherTest {
     @Test
     public void testBuild() throws Exception {
         FreeStyleProject project = jenkins.createFreeStyleProject();
-        DataCollectorPublisher builder = new DataCollectorPublisher(name);
+        DataCollectorPublisher builder = new DataCollectorPublisher(databaseUrl, databaseName, testReportXMLPath);
         project.getBuildersList().add(builder);
 
         FreeStyleBuild build = jenkins.buildAndAssertSuccess(project);
-        jenkins.assertLogContains("Hello, " + name, build);
+        jenkins.assertLogContains("Hello, " + databaseUrl, build);
     }
 
     @Test
     public void testBuildFrench() throws Exception {
 
         FreeStyleProject project = jenkins.createFreeStyleProject();
-        DataCollectorPublisher builder = new DataCollectorPublisher(name);
+        DataCollectorPublisher builder = new DataCollectorPublisher(databaseUrl, databaseName, testReportXMLPath);
         builder.setUseFrench(true);
         project.getBuildersList().add(builder);
 
         FreeStyleBuild build = jenkins.buildAndAssertSuccess(project);
-        jenkins.assertLogContains("Bonjour, " + name, build);
+        jenkins.assertLogContains("Bonjour, " + databaseUrl, build);
     }
 
     @Test
@@ -67,11 +69,11 @@ public class DataCollectorPublisherTest {
         WorkflowJob job = jenkins.createProject(WorkflowJob.class, "test-scripted-pipeline");
         String pipelineScript
                 = "node {\n"
-                + "  greet '" + name + "'\n"
+                + "  greet '" + databaseUrl + "'\n"
                 + "}";
         job.setDefinition(new CpsFlowDefinition(pipelineScript, true));
         WorkflowRun completedBuild = jenkins.assertBuildStatusSuccess(job.scheduleBuild2(0));
-        String expectedString = "Hello, " + name + "!";
+        String expectedString = "Hello, " + databaseUrl + "!";
         jenkins.assertLogContains(expectedString, completedBuild);
     }
 
