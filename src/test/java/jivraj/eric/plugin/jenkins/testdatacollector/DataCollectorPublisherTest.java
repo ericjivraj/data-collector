@@ -11,16 +11,16 @@ import org.jvnet.hudson.test.JenkinsRule;
 
 public class DataCollectorPublisherTest
 {
-    public final String databaseUrl = "Database URL";
-    public final String databaseName = "Database Name";
-    public final String testReportXMLPath = "XML Path";
+    private final String databaseUrl = "Database URL";
+    private final String databaseName = "Database Name";
+    private final String testReportXMLPath = "XML Path";
 
     @Rule
     public JenkinsRule jenkins = new JenkinsRule();
 
-    public FreeStyleProject project;
-    public FreeStyleBuild build;
-    public DataCollectorPublisher publisher;
+    private FreeStyleProject project;
+    private FreeStyleBuild build;
+    private DataCollectorPublisher publisher;
 
 
     @Test
