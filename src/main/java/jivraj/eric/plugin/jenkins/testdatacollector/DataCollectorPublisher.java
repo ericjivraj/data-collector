@@ -25,15 +25,13 @@ public class DataCollectorPublisher extends Recorder implements SimpleBuildStep
 
     private final String databaseUrl;
     private final String databaseName;
-    private final String testReportXMLPath;
     private boolean useFrench;
 
     @DataBoundConstructor
-    public DataCollectorPublisher(String databaseUrl, String databaseName, String testReportXMLPath)
+    public DataCollectorPublisher(String databaseUrl, String databaseName)
     {
         this.databaseUrl = databaseUrl;
         this.databaseName = databaseName;
-        this.testReportXMLPath = testReportXMLPath;
     }
 
     public String getDatabaseUrl()
@@ -44,11 +42,6 @@ public class DataCollectorPublisher extends Recorder implements SimpleBuildStep
     public String getDatabaseName()
     {
         return databaseName;
-    }
-
-    public String getTestReportXMLPath()
-    {
-        return testReportXMLPath;
     }
 
     public boolean isUseFrench()
@@ -65,6 +58,7 @@ public class DataCollectorPublisher extends Recorder implements SimpleBuildStep
     @Override
     public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener) throws InterruptedException, IOException
     {
+        //run.getAction()
         // To add an action object to the run object, simply do run.addAction(object) in this method
         if (useFrench) {
             listener.getLogger().println("Bonjour, " + databaseUrl + "!");
@@ -99,16 +93,6 @@ public class DataCollectorPublisher extends Recorder implements SimpleBuildStep
             if (databaseName.length() == 0)
             {
                 return FormValidation.error(Messages.DataCollectorPublisher_DescriptorImpl_errors_missingDatabaseName());
-            }
-
-            return FormValidation.ok();
-        }
-
-        public FormValidation doCheckTestReportXMLPath(@QueryParameter String testReportXMLPath) throws IOException, ServletException
-        {
-            if (testReportXMLPath.length() == 0)
-            {
-                return FormValidation.error(Messages.DataCollectorPublisher_DescriptorImpl_errors_missingTestReportXMLPath());
             }
 
             return FormValidation.ok();

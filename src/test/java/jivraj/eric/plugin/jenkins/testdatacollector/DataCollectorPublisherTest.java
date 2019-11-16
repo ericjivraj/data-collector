@@ -13,7 +13,6 @@ public class DataCollectorPublisherTest
 {
     private final String databaseUrl = "Database URL";
     private final String databaseName = "Database Name";
-    private final String testReportXMLPath = "XML Path";
 
     @Rule
     public JenkinsRule jenkins = new JenkinsRule();
@@ -50,7 +49,7 @@ public class DataCollectorPublisherTest
 
     private void givenPublisherIsSetUp()
     {
-        publisher = new DataCollectorPublisher(databaseUrl, databaseName, testReportXMLPath);
+        publisher = new DataCollectorPublisher(databaseUrl, databaseName);
     }
 
     private void whenPublisherIsAddedToPublisherList()
@@ -75,7 +74,7 @@ public class DataCollectorPublisherTest
 
     private void thenAssertDataBoundBeans() throws Exception
     {
-        jenkins.assertEqualDataBoundBeans(new DataCollectorPublisher(databaseUrl, databaseName, testReportXMLPath), project.getPublishersList().get(0));
+        jenkins.assertEqualDataBoundBeans(new DataCollectorPublisher(databaseUrl, databaseName), project.getPublishersList().get(0));
     }
 
 }
