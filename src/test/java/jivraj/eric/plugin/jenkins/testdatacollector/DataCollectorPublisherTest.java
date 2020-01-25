@@ -11,8 +11,8 @@ import org.jvnet.hudson.test.JenkinsRule;
 
 public class DataCollectorPublisherTest
 {
-    private final String databaseUrl = "Database URL";
-    private final String databaseName = "Database Name";
+    private final String databaseUrl = "Test Database URL";
+    private final String databaseName = "Test Database Name";
 
     @Rule
     public JenkinsRule jenkins = new JenkinsRule();
