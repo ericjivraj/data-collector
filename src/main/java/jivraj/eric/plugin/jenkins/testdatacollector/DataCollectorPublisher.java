@@ -32,9 +32,10 @@ import org.kohsuke.stapler.DataBoundSetter;
 public class DataCollectorPublisher extends Recorder implements SimpleBuildStep, Action
 {
 
+    private Job project;
     private final String databaseUrl;
     private final String databaseName;
-    private List<Integer> buildsList = new ArrayList<Integer>();
+    private List<Integer> buildsList = new ArrayList<>();
     private boolean useFrench;
 
     @DataBoundConstructor
@@ -68,13 +69,12 @@ public class DataCollectorPublisher extends Recorder implements SimpleBuildStep,
     @Override
     public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener) throws InterruptedException, IOException
     {
-        Job project = run.getParent();
+        project = run.getParent();
         if (!isUpdated(project))
         {
             return;
         }
 
-        buildsList = new ArrayList<>();
         RunList<Run> runs = project.getBuilds();
         for (Run runBuild : runs)
         {
@@ -101,7 +101,7 @@ public class DataCollectorPublisher extends Recorder implements SimpleBuildStep,
                 }
             }
         }
-        listener.getLogger().println("[perform()] Logging:" + databaseUrl + "!");
+        listener.getLogger().println("[perform()] Logging:" + databaseUrl + " and " + databaseName);
     }
 
     @Override

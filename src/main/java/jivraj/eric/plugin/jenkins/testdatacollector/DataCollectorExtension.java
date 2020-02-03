@@ -10,7 +10,6 @@ import hudson.model.Action;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.Job;
-import hudson.tasks.Recorder;
 import jenkins.model.TransientActionFactory;
 
 @Extension
