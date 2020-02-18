@@ -5,200 +5,250 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.model.Action;
 import hudson.model.Job;
+import hudson.model.Result;
+import hudson.plugins.git.Branch;
+import hudson.plugins.git.util.BuildData;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Publisher;
 import hudson.tasks.Recorder;
+import hudson.tasks.junit.CaseResult;
 import hudson.tasks.test.AbstractTestResultAction;
-import hudson.tasks.test.AggregatedTestResultAction;
+import hudson.tasks.test.TestResult;
 import hudson.util.FormValidation;
 import hudson.model.AbstractProject;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
+
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.CheckForNull;
 import javax.servlet.ServletException;
+
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
-import hudson.util.RunList;
 import jenkins.tasks.SimpleBuildStep;
+
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundSetter;
+
+import com.mongodb.BasicDBObject;
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.DBObject;
+import com.mongodb.MongoClient;
 
 public class DataCollectorPublisher extends Recorder implements SimpleBuildStep, Action
 {
 
-    private Job project;
-    private final String databaseUrl;
-    private final String databaseName;
-    private List<Integer> buildsList = new ArrayList<>();
-    private boolean useFrench;
+  private TestResultServiceDAO mongoService;
+  private MongoClient mongoClient;
+  private DB database;
+  private DBCollection collection;
+  private Job project;
+  private final String databaseUrl;
+  private final String databaseName;
+  private List<Integer> buildsList = new ArrayList<>();
+  private boolean useFrench;
 
-    @DataBoundConstructor
-    public DataCollectorPublisher(String databaseUrl, String databaseName)
+  @DataBoundConstructor
+  public DataCollectorPublisher(String databaseUrl, String databaseName)
+  {
+    this.databaseUrl = databaseUrl;
+    this.databaseName = databaseName;
+    mongoService = new TestResultServiceDAO();
+  }
+
+  public String getDatabaseUrl()
+  {
+    return databaseUrl;
+  }
+
+  public String getDatabaseName()
+  {
+    return databaseName;
+  }
+
+  public boolean isUseFrench()
+  {
+    return useFrench;
+  }
+
+  @DataBoundSetter
+  public void setUseFrench(boolean useFrench)
+  {
+    this.useFrench = useFrench;
+  }
+
+  @Override
+  public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener) throws InterruptedException, IOException
+  {
+    listener.getLogger().println("[Data Collector Plugin] Started running...");
+
+    initiateMongoConnection();
+    fetchMongoDatabase();
+    fetchMongoCollection("results");
+
+    project = run.getParent();
+    if (!isUpdated(project))
     {
-        this.databaseUrl = databaseUrl;
-        this.databaseName = databaseName;
+      return;
     }
 
-    public String getDatabaseUrl()
+    Object result;
+    AbstractTestResultAction testResultAction = run.getAction(AbstractTestResultAction.class);
+    result = testResultAction.getResult();
+
+    if (result instanceof TestResult)
     {
-        return databaseUrl;
+      BuildData buildData = run.getAction(BuildData.class);
+      Collection<Branch> branches = buildData.getLastBuiltRevision().getBranches();
+      String branchName = branches.iterator().next().getName();
+      String buildRevision = String.valueOf(buildData.getLastBuiltRevision());
+
+      TestResult testResult = (TestResult) result;
+      String testJob = testResult.getRun().getParent().getDisplayName();
+      String buildNumber = String.valueOf(testResult.getRun().getNumber());
+      String buildStatus = String.valueOf(testResult.getBuildResult());
+
+      List<DBObject> testResultsList = new ArrayList<>();
+      List<DBObject> classNameList = new ArrayList<>();
+      for (TestResult failedTest : testResult.getFailedTests())
+      {
+        String className = ((CaseResult) failedTest).getClassName();
+        String testName = failedTest.getName();
+        String testStatus = String.valueOf(((CaseResult) failedTest).getStatus());
+        String stackTrace = failedTest.getErrorStackTrace();
+
+        DBObject testResultObject = new BasicDBObject("ClassName", className)
+               .append("TestName", testName)
+               .append("TestStatus", testStatus)
+               .append("Stacktrace", stackTrace);
+
+        testResultsList.add(testResultObject);
+      }
+
+      DBObject testSuite = new BasicDBObject("TestJob", testJob)
+              .append("BuildNo", buildNumber)
+              .append("BuildStatus", buildStatus)
+              .append("BuildRevision", buildRevision)
+              .append("Branch", branchName)
+              .append("TestResults", testResultsList);
+
+      collection.insert(testSuite);
+
+      listener.getLogger().println("[Data Collector Plugin] Success: Data has been collected and stored into the database...");
     }
 
-    public String getDatabaseName()
+    else
     {
-        return databaseName;
+      listener.getLogger().println("[Data Collector Plugin] Error: The result is not of the type expected! The type expected was Test Result...");
     }
 
-    public boolean isUseFrench()
+    shutdownMongoConnection(mongoClient);
+    listener.getLogger().println("[Data Collector Plugin] Finished running...");
+  }
+
+  private void initiateMongoConnection() throws UnknownHostException
+  {
+    mongoClient = mongoService.initiateMongoConnection(mongoClient, databaseUrl);
+  }
+
+  private void fetchMongoDatabase()
+  {
+    database = mongoService.fetchMongoDatabase(mongoClient, databaseName);
+  }
+
+  private void fetchMongoCollection(String collectionName)
+  {
+    collection = mongoService.fetchMongoCollection(collectionName);
+  }
+
+  private void shutdownMongoConnection(MongoClient mongoClient)
+  {
+    mongoService.shutdownMongoConnection(mongoClient);
+  }
+
+  private boolean isUpdated(Job project)
+  {
+    Run lastBuild = project.getLastBuild();
+
+    if (lastBuild == null)
     {
-        return useFrench;
+      return false;
     }
 
-    @DataBoundSetter
-    public void setUseFrench(boolean useFrench)
+    int latestBuildNumber = lastBuild.getNumber();
+    return !(buildsList.contains(latestBuildNumber));
+  }
+
+  @Override
+  public BuildStepMonitor getRequiredMonitorService()
+  {
+    return BuildStepMonitor.NONE;
+  }
+
+  @CheckForNull
+  @Override
+  public String getIconFileName()
+  {
+    return null;
+  }
+
+  @CheckForNull
+  @Override
+  public String getDisplayName()
+  {
+    return null;
+  }
+
+  @CheckForNull
+  @Override
+  public String getUrlName()
+  {
+    return null;
+  }
+
+  @Symbol("greet")
+  @Extension
+  public static final class DescriptorImpl extends BuildStepDescriptor<Publisher>
+  {
+
+    public FormValidation doCheckDatabaseUrl(@QueryParameter String databaseUrl) throws IOException, ServletException
     {
-        this.useFrench = useFrench;
+      if (databaseUrl.length() == 0)
+      {
+        return FormValidation.error(Messages.DataCollectorPublisher_DescriptorImpl_errors_missingDatabaseUrl());
+      }
+
+      return FormValidation.ok();
+    }
+
+    public FormValidation doCheckDatabaseName(@QueryParameter String databaseName) throws IOException, ServletException
+    {
+      if (databaseName.length() == 0)
+      {
+        return FormValidation.error(Messages.DataCollectorPublisher_DescriptorImpl_errors_missingDatabaseName());
+      }
+
+      return FormValidation.ok();
     }
 
     @Override
-    public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener) throws InterruptedException, IOException
+    public boolean isApplicable(Class<? extends AbstractProject> aClass)
     {
-        project = run.getParent();
-        if (!isUpdated(project))
-        {
-            return;
-        }
-
-        RunList<Run> runs = project.getBuilds();
-        for (Run runBuild : runs)
-        {
-            if (runBuild.isBuilding())
-            {
-                continue;
-            }
-
-            int buildNumber = runBuild.getNumber();
-            buildsList.add(buildNumber);
-
-            List<AbstractTestResultAction> testActions = runBuild.getActions(AbstractTestResultAction.class);
-
-            for (AbstractTestResultAction testAction : testActions)
-            {
-                if (AggregatedTestResultAction.class.isInstance(testAction))
-                {
-                    addTestResults(buildNumber, (AggregatedTestResultAction) testAction);
-                }
-
-                else
-                {
-                    addTestResult(buildNumber, runBuild, testAction, testAction.getResult());
-                }
-            }
-        }
-        listener.getLogger().println("[perform()] Logging:" + databaseUrl + " and " + databaseName);
+      return true;
     }
 
-    @Override
-    public BuildStepMonitor getRequiredMonitorService()
-    {
-        return BuildStepMonitor.NONE;
-    }
-
-    @CheckForNull
-    @Override
-    public String getIconFileName()
-    {
-        return null;
-    }
-
-    @CheckForNull
     @Override
     public String getDisplayName()
     {
-        return null;
+      return Messages.DataCollectorPublisher_DescriptorImpl_DisplayCollectDataPostBuildAction();
     }
-
-    @CheckForNull
-    @Override
-    public String getUrlName()
-    {
-        return null;
-    }
-
-    @Symbol("greet")
-    @Extension
-    public static final class DescriptorImpl extends BuildStepDescriptor<Publisher>
-    {
-
-        public FormValidation doCheckDatabaseUrl(@QueryParameter String databaseUrl) throws IOException, ServletException
-        {
-            if (databaseUrl.length() == 0)
-            {
-                return FormValidation.error(Messages.DataCollectorPublisher_DescriptorImpl_errors_missingDatabaseUrl());
-            }
-
-            return FormValidation.ok();
-        }
-
-        public FormValidation doCheckDatabaseName(@QueryParameter String databaseName) throws IOException, ServletException
-        {
-            if (databaseName.length() == 0)
-            {
-                return FormValidation.error(Messages.DataCollectorPublisher_DescriptorImpl_errors_missingDatabaseName());
-            }
-
-            return FormValidation.ok();
-        }
-
-        @Override
-        public boolean isApplicable(Class<? extends AbstractProject> aClass)
-        {
-            return true;
-        }
-
-        @Override
-        public String getDisplayName()
-        {
-            return Messages.DataCollectorPublisher_DescriptorImpl_DisplayCollectDataPostBuildAction();
-        }
-
-    }
-
-    private void addTestResults(int buildNumber, AggregatedTestResultAction testAction)
-    {
-        List<AggregatedTestResultAction.ChildReport> childReports = testAction.getChildReports();
-
-        for (AggregatedTestResultAction.ChildReport childReport : childReports)
-        {
-            addTestResult(buildNumber, childReport.run, testAction, childReport.result);
-        }
-    }
-
-    private void addTestResult(int buildNumber, Run run, AbstractTestResultAction testAction, Object result)
-    {
-        if (run == null || result == null)
-        {
-            return;
-        }
-    }
-
-    public boolean isUpdated(Job project)
-    {
-        Run lastBuild = project.getLastBuild();
-
-        if (lastBuild == null)
-        {
-            return false;
-        }
-
-        int latestBuildNumber = lastBuild.getNumber();
-        return !(buildsList.contains(latestBuildNumber));
-    }
-
+  }
 }
