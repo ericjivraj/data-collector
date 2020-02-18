@@ -99,12 +99,20 @@
             <artifactId>junit</artifactId>
             <version>1.7</version>
         </dependency>
+        <!-- Mockito Library -->
         <!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <version>2.10.0</version>
             <scope>test</scope>
+        </dependency>
+        <!-- MongoDB Java Driver -->
+        <!-- https://www.mongodb.com/blog/post/getting-started-with-mongodb-and-java-part-i -->
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongo-java-driver</artifactId>
+            <version>2.12.3</version>
         </dependency>
     </dependencies>
 
