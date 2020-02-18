@@ -42,7 +42,8 @@ public class DataCollectorExtension extends TransientActionFactory<Job> implemen
 
   public static class DescriptorImpl extends Descriptor<DataCollectorExtension>
   {
-    public DescriptorImpl() {
+    public DescriptorImpl()
+    {
       load();
     }
   }
