@@ -128,7 +128,7 @@ public class DataCollectorPublisher extends Recorder implements SimpleBuildStep,
         DBObject testResultObject = new BasicDBObject("ClassName", className)
                .append("TestName", testName)
                .append("TestStatus", testStatus)
-               .append("Stacktrace", stackTrace);
+               .append("StackTrace", stackTrace);
 
         testResultsList.add(testResultObject);
       }
