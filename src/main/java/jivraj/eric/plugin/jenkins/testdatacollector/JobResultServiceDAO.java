@@ -7,13 +7,13 @@ import com.mongodb.DBCollection;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
 
-public class TestResultServiceDAO
+public class JobResultServiceDAO
 {
   private MongoClient mongoClient;
   private DB database;
   private DBCollection collection;
 
-  public TestResultServiceDAO()
+  public JobResultServiceDAO()
   {
 
   }

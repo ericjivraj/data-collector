@@ -5,7 +5,6 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.model.Action;
 import hudson.model.Job;
-import hudson.model.Result;
 import hudson.plugins.git.Branch;
 import hudson.plugins.git.util.BuildData;
 import hudson.tasks.BuildStepMonitor;
@@ -46,7 +45,7 @@ import com.mongodb.MongoClient;
 public class DataCollectorPublisher extends Recorder implements SimpleBuildStep, Action
 {
 
-  private TestResultServiceDAO mongoService;
+  private JobResultServiceDAO mongoService;
   private MongoClient mongoClient;
   private DB database;
   private DBCollection collection;
@@ -61,7 +60,7 @@ public class DataCollectorPublisher extends Recorder implements SimpleBuildStep,
   {
     this.databaseUrl = databaseUrl;
     this.databaseName = databaseName;
-    mongoService = new TestResultServiceDAO();
+    mongoService = new JobResultServiceDAO();
   }
 
   public String getDatabaseUrl()
