@@ -91,7 +91,7 @@ public class DataCollectorPublisher extends Recorder implements SimpleBuildStep,
 
     initiateMongoConnection();
     fetchMongoDatabase();
-    fetchMongoCollection("results");
+    fetchMongoCollection("JobResults");
 
     project = run.getParent();
     if (!isUpdated(project))
@@ -124,20 +124,20 @@ public class DataCollectorPublisher extends Recorder implements SimpleBuildStep,
         String testStatus = String.valueOf(((CaseResult) failedTest).getStatus());
         String stackTrace = failedTest.getErrorStackTrace();
 
-        DBObject testResultObject = new BasicDBObject("ClassName", className)
-               .append("TestName", testName)
-               .append("TestStatus", testStatus)
-               .append("StackTrace", stackTrace);
+        DBObject testResultObject = new BasicDBObject("className", className)
+               .append("testName", testName)
+               .append("testStatus", testStatus)
+               .append("stackTrace", stackTrace);
 
         testResultsList.add(testResultObject);
       }
 
-      DBObject testSuite = new BasicDBObject("TestJob", testJob)
-              .append("BuildNo", buildNumber)
-              .append("BuildStatus", buildStatus)
-              .append("BuildRevision", buildRevision)
-              .append("Branch", branchName)
-              .append("TestResults", testResultsList);
+      DBObject testSuite = new BasicDBObject("testJob", testJob)
+              .append("buildNo", buildNumber)
+              .append("buildStatus", buildStatus)
+              .append("buildRevision", buildRevision)
+              .append("branch", branchName)
+              .append("testResults", testResultsList);
 
       collection.insert(testSuite);
 
