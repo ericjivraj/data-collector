@@ -29,7 +29,9 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import jenkins.tasks.SimpleBuildStep;
 
@@ -115,9 +117,29 @@ public class DataCollectorPublisher extends Recorder implements SimpleBuildStep,
       String buildNumber = String.valueOf(testResult.getRun().getNumber());
       String buildStatus = String.valueOf(testResult.getBuildResult());
 
-      List<DBObject> testResultsList = new ArrayList<>();
-      List<DBObject> classNameList = new ArrayList<>();
-      for (TestResult failedTest : testResult.getFailedTests())
+      Map<String, List<DBObject>> testResultsMap = new HashMap<>();
+
+      for(TestResult passedTest: testResult.getPassedTests())
+      {
+        String className = ((CaseResult) passedTest).getClassName();
+        String testName = passedTest.getName();
+        String testStatus = String.valueOf(((CaseResult) passedTest).getStatus());
+
+        DBObject testResultObject = new BasicDBObject("className", className)
+                .append("testName", testName)
+                .append("testStatus", testStatus);
+
+        List<DBObject> testResultsList = testResultsMap.get(className);
+        if(testResultsList == null)
+        {
+          testResultsList = new ArrayList<>();
+          testResultsMap.put(className, testResultsList);
+        }
+
+        testResultsList.add(testResultObject);
+      }
+
+      for(TestResult failedTest : testResult.getFailedTests())
       {
         String className = ((CaseResult) failedTest).getClassName();
         String testName = failedTest.getName();
@@ -125,9 +147,16 @@ public class DataCollectorPublisher extends Recorder implements SimpleBuildStep,
         String stackTrace = failedTest.getErrorStackTrace();
 
         DBObject testResultObject = new BasicDBObject("className", className)
-               .append("testName", testName)
-               .append("testStatus", testStatus)
-               .append("stackTrace", stackTrace);
+                .append("testName", testName)
+                .append("testStatus", testStatus)
+                .append("stackTrace", stackTrace);
+
+        List<DBObject> testResultsList = testResultsMap.get(className);
+        if(testResultsList == null)
+        {
+          testResultsList = new ArrayList<>();
+          testResultsMap.put(className, testResultsList);
+        }
 
         testResultsList.add(testResultObject);
       }
@@ -137,7 +166,7 @@ public class DataCollectorPublisher extends Recorder implements SimpleBuildStep,
               .append("buildStatus", buildStatus)
               .append("buildRevision", buildRevision)
               .append("branch", branchName)
-              .append("testResults", testResultsList);
+              .append("testResults", testResultsMap);
 
       collection.insert(testSuite);
 
