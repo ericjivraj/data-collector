@@ -5,7 +5,6 @@
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
         <version>3.4</version>
-        <relativePath />
     </parent>
     <groupId>io.jenkins.plugins</groupId>
     <artifactId>test-data-collector</artifactId>
@@ -97,7 +96,7 @@
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>junit</artifactId>
-            <version>1.7</version>
+            <version>1.10</version>
         </dependency>
         <!-- Mockito Library -->
         <!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
