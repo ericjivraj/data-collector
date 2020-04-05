@@ -36,7 +36,6 @@ import java.util.Map;
 import jenkins.tasks.SimpleBuildStep;
 
 import org.jenkinsci.Symbol;
-import org.kohsuke.stapler.DataBoundSetter;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
@@ -44,6 +43,11 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 
+/** This can be seen as the Application class
+ * This is the Data Collector Publisher class, and this object is responsible for handling the build plugin running and executing behaviour
+ * Extending the Recorder interface makes this plugin a post-build plugin
+ * This means that this plugin only runs after the Jenkins build has completed
+ */
 public class DataCollectorPublisher extends Recorder implements SimpleBuildStep, Action
 {
 
@@ -55,8 +59,11 @@ public class DataCollectorPublisher extends Recorder implements SimpleBuildStep,
   private final String databaseUrl;
   private final String databaseName;
   private List<Integer> buildsList = new ArrayList<>();
-  private boolean useFrench;
 
+  /** Default constructor for the object
+   * @param databaseUrl Database URL
+   * @param databaseName Database Name
+   */
   @DataBoundConstructor
   public DataCollectorPublisher(String databaseUrl, String databaseName)
   {
@@ -65,27 +72,31 @@ public class DataCollectorPublisher extends Recorder implements SimpleBuildStep,
     mongoService = new JobResultServiceDAO();
   }
 
+  /** Getter method for the database url
+   * @return Database URL
+   */
   public String getDatabaseUrl()
   {
     return databaseUrl;
   }
 
+  /** Getter method for the database name
+   * @return Database Name
+   */
   public String getDatabaseName()
   {
     return databaseName;
   }
 
-  public boolean isUseFrench()
-  {
-    return useFrench;
-  }
-
-  @DataBoundSetter
-  public void setUseFrench(boolean useFrench)
-  {
-    this.useFrench = useFrench;
-  }
-
+  /** This is the method that gets executed and called when a Jenkins build finishes
+   * As soon as the Jenkins build finishes, this method gets triggered so the plugin starts running
+   * @param run Run object
+   * @param workspace Workspace object
+   * @param launcher Launcher object
+   * @param listener Listener object
+   * @throws InterruptedException
+   * @throws IOException
+   */
   @Override
   public void perform(Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener listener) throws InterruptedException, IOException
   {
@@ -94,12 +105,6 @@ public class DataCollectorPublisher extends Recorder implements SimpleBuildStep,
     initiateMongoConnection();
     fetchMongoDatabase();
     fetchMongoCollection("JobResults");
-
-    project = run.getParent();
-    if (!isUpdated(project))
-    {
-      return;
-    }
 
     Object result;
     AbstractTestResultAction testResultAction = run.getAction(AbstractTestResultAction.class);
@@ -126,7 +131,6 @@ public class DataCollectorPublisher extends Recorder implements SimpleBuildStep,
         }
 
       Map<String, List<DBObject>> testResultsMap = new HashMap<>();
-
       for(TestResult passedTest: testResult.getPassedTests())
       {
         String className = ((CaseResult) passedTest).getClassName();
@@ -169,14 +173,14 @@ public class DataCollectorPublisher extends Recorder implements SimpleBuildStep,
         testResultsList.add(testResultObject);
       }
 
-      DBObject testSuite = new BasicDBObject("testJob", testJob)
+      DBObject jobResult = new BasicDBObject("testJob", testJob)
               .append("buildNo", buildNumber)
               .append("buildStatus", buildStatus)
               .append("buildRevision", buildRevision)
               .append("branch", branchName)
               .append("testResults", testResultsMap);
 
-      collection.insert(testSuite);
+      collection.insert(jobResult);
 
       listener.getLogger().println("[Data Collector Plugin] Success: Data has been collected and stored into the database...");
     }
@@ -190,37 +194,36 @@ public class DataCollectorPublisher extends Recorder implements SimpleBuildStep,
     listener.getLogger().println("[Data Collector Plugin] Finished running...");
   }
 
+  /** Initiates mongodb connection using the DAO layer object
+   * @throws UnknownHostException if host is not recognized or does not exist
+   */
   private void initiateMongoConnection() throws UnknownHostException
   {
     mongoClient = mongoService.initiateMongoConnection(mongoClient, databaseUrl);
   }
 
+  /**
+   * Fetches the mongo database using the DAO layer object
+   */
   private void fetchMongoDatabase()
   {
     database = mongoService.fetchMongoDatabase(mongoClient, databaseName);
   }
 
+  /** Fetches the mongo collection using the DAO layer object
+   * @param collectionName Collection Name
+   */
   private void fetchMongoCollection(String collectionName)
   {
     collection = mongoService.fetchMongoCollection(collectionName);
   }
 
+  /** Shuts down the mongo connection
+   * @param mongoClient Mongo Client Connection
+   */
   private void shutdownMongoConnection(MongoClient mongoClient)
   {
     mongoService.shutdownMongoConnection(mongoClient);
-  }
-
-  private boolean isUpdated(Job project)
-  {
-    Run lastBuild = project.getLastBuild();
-
-    if (lastBuild == null)
-    {
-      return false;
-    }
-
-    int latestBuildNumber = lastBuild.getNumber();
-    return !(buildsList.contains(latestBuildNumber));
   }
 
   @Override
