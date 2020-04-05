@@ -115,7 +115,15 @@ public class DataCollectorPublisher extends Recorder implements SimpleBuildStep,
       TestResult testResult = (TestResult) result;
       String testJob = testResult.getRun().getParent().getDisplayName();
       String buildNumber = String.valueOf(testResult.getRun().getNumber());
-      String buildStatus = String.valueOf(testResult.getBuildResult());
+      String buildStatus;
+      if(testResult.getBuildResult() == null)
+      {
+        buildStatus = "PASSED";
+      }
+      else
+        {
+          buildStatus = String.valueOf(testResult.getBuildResult());
+        }
 
       Map<String, List<DBObject>> testResultsMap = new HashMap<>();
 
