@@ -1,5 +1,8 @@
 package jivraj.eric.plugin.jenkins.testdatacollector;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.io.IOException;
 
 import hudson.model.FreeStyleBuild;
@@ -21,7 +24,6 @@ public class DataCollectorPublisherTest
     private FreeStyleBuild build;
     private DataCollectorPublisher publisher;
 
-
     @Test
     public void testConfigRoundtrip() throws Exception
     {
@@ -29,6 +31,9 @@ public class DataCollectorPublisherTest
         givenPublisherIsSetUp();
         whenPublisherIsAddedToPublisherList();
         whenConfigRoundTripIsCalled();
+        thenAssertPublisherProperties(publisher.getDatabaseName(), databaseName);
+        thenAssertPublisherProperties(publisher.getDatabaseUrl(), databaseUrl);
+        thenAssertPublisherHasBeenAdded();
         thenAssertDataBoundBeans();
     }
 
@@ -38,8 +43,9 @@ public class DataCollectorPublisherTest
         givenFreeStyleProjectIsSetUp();
         givenPublisherIsSetUp();
         whenPublisherIsAddedToPublisherList();
-        thenAssertBuildStatusSuccess();
-        thenAssertLogContainsCorrectValues();
+        thenAssertPublisherHasBeenAdded();
+        thenAssertPublisherProperties(publisher.getDatabaseName(), databaseName);
+        thenAssertPublisherProperties(publisher.getDatabaseUrl(), databaseUrl);
     }
 
     private void givenFreeStyleProjectIsSetUp() throws IOException
@@ -67,14 +73,19 @@ public class DataCollectorPublisherTest
         build = jenkins.buildAndAssertSuccess(project);
     }
 
-    private void thenAssertLogContainsCorrectValues() throws IOException
+    private void thenAssertPublisherHasBeenAdded() throws IOException
     {
-        jenkins.assertLogContains("Hello, " + databaseUrl, build);
+        assertNotNull(project.getPublishersList());
     }
 
     private void thenAssertDataBoundBeans() throws Exception
     {
         jenkins.assertEqualDataBoundBeans(new DataCollectorPublisher(databaseUrl, databaseName), project.getPublishersList().get(0));
+    }
+
+    private void thenAssertPublisherProperties(String expected, String actual)
+    {
+        assertEquals(expected, actual);
     }
 
 }
