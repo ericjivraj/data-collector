@@ -50,15 +50,12 @@ import com.mongodb.MongoClient;
  */
 public class DataCollectorPublisher extends Recorder implements SimpleBuildStep, Action
 {
-
   private JobResultServiceDAO mongoService;
   private MongoClient mongoClient;
   private DB database;
   private DBCollection collection;
-  private Job project;
   private final String databaseUrl;
   private final String databaseName;
-  private List<Integer> buildsList = new ArrayList<>();
 
   /** Default constructor for the object
    * @param databaseUrl Database URL
@@ -90,10 +87,10 @@ public class DataCollectorPublisher extends Recorder implements SimpleBuildStep,
 
   /** This is the method that gets executed and called when a Jenkins build finishes
    * As soon as the Jenkins build finishes, this method gets triggered so the plugin starts running
-   * @param run Run object
-   * @param workspace Workspace object
-   * @param launcher Launcher object
-   * @param listener Listener object
+   * @param run Run object that represents the build run
+   * @param workspace Workspace object that represents the jenkins workspace
+   * @param launcher Launcher object that represents the launcher
+   * @param listener Listener object that can be used for logging purposes
    * @throws InterruptedException
    * @throws IOException
    */
