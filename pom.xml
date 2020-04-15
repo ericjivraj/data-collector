@@ -7,7 +7,7 @@
         <version>3.4</version>
     </parent>
     <groupId>io.jenkins.plugins</groupId>
-    <artifactId>test-data-collector</artifactId>
+    <artifactId>data-collector</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>hpi</packaging>
     <properties>
@@ -20,7 +20,7 @@
           ~ stapler-plugin.version: The Stapler Maven plugin version required by the plugin.
      -->
     </properties>
-    <name>Test Data Collector Plugin</name>
+    <name>Data Collector</name>
     <description>This plugin allows you to collect test results data and store it into a database</description>
     <!-- The default licence for Jenkins OSS Plugins is MIT. Substitute for the applicable one if needed. -->
     <licenses>
