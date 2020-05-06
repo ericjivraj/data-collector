@@ -1,4 +1,4 @@
-package jivraj.eric.plugin.jenkins.testdatacollector;
+package jivraj.eric.plugin.jenkins.testdatacollector.service;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -13,7 +13,7 @@ import com.mongodb.DB;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
 
-public class JobResultServiceDAOTest
+public class JobResultDAOTest
 {
   private MongoClient mongoClientMock;
   private DB databaseMock;

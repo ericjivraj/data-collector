@@ -1,4 +1,4 @@
-package jivraj.eric.plugin.jenkins.testdatacollector;
+package jivraj.eric.plugin.jenkins.testdatacollector.service;
 
 import java.net.UnknownHostException;
 
@@ -12,7 +12,7 @@ import com.mongodb.MongoClientURI;
  * This class represents the service DAO (Data Access Object) layer
  * It allows the communication between the application and the database
  */
-public class JobResultServiceDAO
+public class JobResultDAO
 {
   private MongoClient mongoClient;
   private DB database;
@@ -21,7 +21,7 @@ public class JobResultServiceDAO
   /**
    * Default constructor for this object
    */
-  public JobResultServiceDAO()
+  public JobResultDAO()
   {
 
   }
