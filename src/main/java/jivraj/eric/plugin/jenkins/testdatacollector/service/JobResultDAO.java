@@ -94,12 +94,11 @@ public class JobResultDAO
   }
 
   /** Initiates the mongodb connection
-   * @param mongoClient Mongo Client Connection
    * @param URI Database URI
    * @return Mongo Client Connection object
    * @throws UnknownHostException is thrown if the host is not recognized or does not exist
    */
-  public MongoClient initiateMongoConnection(MongoClient mongoClient, String URI) throws UnknownHostException
+  public MongoClient initiateMongoConnection(String URI) throws UnknownHostException
   {
     return mongoClient = new MongoClient(new MongoClientURI(URI));
   }

@@ -5,6 +5,7 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.model.Action;
 import hudson.plugins.git.Branch;
+import hudson.plugins.git.Revision;
 import hudson.plugins.git.util.BuildData;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Publisher;
@@ -52,7 +53,6 @@ public class DataCollectorPublisher extends Recorder implements SimpleBuildStep,
 {
   private JobResultDAO mongoService;
   private MongoClient mongoClient;
-  private DB database;
   private DBCollection collection;
   private final String databaseUrl;
   private final String databaseName;
@@ -110,7 +110,16 @@ public class DataCollectorPublisher extends Recorder implements SimpleBuildStep,
     if (result instanceof TestResult)
     {
       BuildData buildData = run.getAction(BuildData.class);
-      Collection<Branch> branches = buildData.getLastBuiltRevision().getBranches();
+
+      final Revision lastBuiltRevision = buildData.getLastBuiltRevision();
+      if (lastBuiltRevision == null)
+      {
+        listener.getLogger().println("Error trying to get last built revision");
+        return;
+      }
+
+      Collection<Branch> branches = lastBuiltRevision.getBranches();
+
       String branchName = branches.iterator().next().getName();
       String buildRevision = String.valueOf(buildData.getLastBuiltRevision());
 
@@ -196,7 +205,7 @@ public class DataCollectorPublisher extends Recorder implements SimpleBuildStep,
    */
   private void initiateMongoConnection() throws UnknownHostException
   {
-    mongoClient = mongoService.initiateMongoConnection(mongoClient, databaseUrl);
+    mongoClient = mongoService.initiateMongoConnection(databaseUrl);
   }
 
   /**
@@ -204,7 +213,7 @@ public class DataCollectorPublisher extends Recorder implements SimpleBuildStep,
    */
   private void fetchMongoDatabase()
   {
-    database = mongoService.fetchMongoDatabase(mongoClient, databaseName);
+    mongoService.fetchMongoDatabase(mongoClient, databaseName);
   }
 
   /** Fetches the mongo collection using the DAO layer object
